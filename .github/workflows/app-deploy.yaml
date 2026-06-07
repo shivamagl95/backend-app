@@ -44,3 +44,37 @@ jobs:
       - name: Push image
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update ArgoCD Image
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: backend-app
+        run: |
+
+          IMAGE_TAG=${GITHUB_SHA}
+
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+          echo "Updating image to ${IMAGE_URI}"
+
+          curl -X PATCH \
+            -H "Authorization: Bearer $ARGOCD_AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            "http://$ARGOCD_SERVER/api/v1/applications/${ECR_REPOSITORY}" \
+            -d '{
+              "name": "frontend-app",
+              "patch": "{\"spec\":{\"source\":{\"kustomize\":{\"images\":[\"'"${IMAGE_URI}"'\"]}}}}",
+              "patchType": "merge"
+            }'
+
+      - name: Get Application
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+
+          curl -k \
+            "http://${ARGOCD_SERVER}/api/v1/applications/${ECR_REPOSITORY}" \
+            -H "Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
