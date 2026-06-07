@@ -8,7 +8,3 @@ resources:
   - deployment.yaml
   - hpa.yaml
   - secrets.yaml
-
-commonLabels:
-  app.kubernetes.io/name: backend-app
-  app.kubernetes.io/managed-by: argocd
