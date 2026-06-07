@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: backend
 
 resources:
-  - namespace.yaml
   - deployment.yaml
   - hpa.yaml
   - secrets.yaml
